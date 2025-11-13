@@ -1,0 +1,2050 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CrediMás - Tienda en Línea y Créditos</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+    <style>
+        /* ========================================= */
+        /* === ESTILOS BASE Y DE LA TIENDA === */
+        /* ========================================= */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa; /* Fondo de la Landing */
+            color: #1a1a1a;
+        }
+
+        /* Estilos específicos de la Tienda */
+        .tienda-body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+            background: #f5f5f7; /* Fondo de la tienda */
+        }
+
+        /* Contenedor principal de la tienda, inicialmente oculto */
+        #tienda-container {
+            display: none;
+            min-height: 100vh;
+        }
+
+        /* Navegación de la Tienda */
+        nav {
+            background: #1d1d1f;
+            color: #f5f5f7;
+            padding: 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .nav-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            height: 44px;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 30px;
+            align-items: center;
+            flex: 1;
+            justify-content: center;
+        }
+
+        .nav-links li {
+            position: relative;
+        }
+
+        .nav-links a {
+            color: #f5f5f7;
+            text-decoration: none;
+            font-size: 12px;
+            opacity: 0.8;
+            transition: opacity 0.3s;
+            cursor: pointer;
+        }
+
+        .nav-links a:hover {
+            opacity: 1;
+        }
+
+        .apple-logo {
+            font-size: 20px;
+            position: absolute;
+            left: 20px;
+            color: #f5f5f7;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        /* Menú desplegable */
+        .dropdown-menu {
+            position: fixed;
+            top: 44px;
+            left: 0;
+            width: 100%;
+            background: #f5f5f7;
+            opacity: 0;
+            visibility: hidden;
+            padding: 60px 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            z-index: 998;
+        }
+
+        .dropdown-menu.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .dropdown-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .dropdown-title {
+            font-size: 14px;
+            color: #1d1d1f;
+            margin-bottom: 30px;
+            font-weight: 600;
+        }
+
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 40px;
+            margin-bottom: 20px;
+        }
+
+        .product-card {
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .product-card:hover {
+            transform: scale(1.05);
+        }
+
+        .product-image-placeholder {
+            width: 200px;
+            height: 280px;
+            margin: 0 auto 20px;
+            background: linear-gradient(135deg, #e0e7ee 0%, #c8d5e3 100%);
+            border-radius: 30px;
+            position: relative;
+        }
+
+        .product-card.orange .product-image-placeholder { background: linear-gradient(135deg, #d97757 0%, #c86d4f 100%); }
+        .product-card.blue .product-image-placeholder { background: linear-gradient(135deg, #a3b8d9 0%, #8fa3c4 100%); }
+        .product-card.purple .product-image-placeholder { background: linear-gradient(135deg, #c4b5d9 0%, #b0a1c4 100%); }
+        .product-card.darkblue .product-image-placeholder { background: linear-gradient(135deg, #3a4d7f 0%, #2d3e6b 100%); }
+        .product-card.white .product-image-placeholder { background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%); }
+
+        .product-badge {
+            color: #d35f3f;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .product-name {
+            font-size: 21px;
+            font-weight: 600;
+            color: #1d1d1f;
+            margin-bottom: 8px;
+        }
+
+        .product-description {
+            font-size: 14px;
+            color: #86868b;
+            margin-bottom: 8px;
+        }
+
+        .product-price {
+            font-size: 14px;
+            color: #1d1d1f;
+            margin-bottom: 15px;
+        }
+
+        .product-links {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .product-link {
+            color: #0071e3;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        /* Overlay */
+        .overlay {
+            position: fixed;
+            top: 44px;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            opacity: 0;
+            visibility: hidden;
+            z-index: 997;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Secciones de productos */
+        .product-section {
+            text-align: center;
+            padding: 60px 20px;
+            background: #fff;
+            margin-bottom: 12px;
+        }
+
+        .product-section h1 {
+            font-size: 56px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            letter-spacing: -0.5px;
+        }
+
+        .product-section .subtitle {
+            font-size: 28px;
+            margin-bottom: 5px;
+            color: #1d1d1f;
+        }
+
+        .product-images {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 40px;
+        }
+
+        .phone-view {
+            width: 120px;
+            height: 400px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 40px;
+            position: relative;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        }
+
+        .phone-view:nth-child(1) { background: linear-gradient(135deg, #2d3e50 0%, #4a5f7f 100%); }
+        .phone-view:nth-child(2) { background: linear-gradient(135deg, #e0e7ee 0%, #c8d5e3 100%); transform: rotateY(15deg); }
+        .phone-view:nth-child(3) { background: linear-gradient(135deg, #3a4a5c 0%, #5a6e82 100%); }
+
+        /* Sección iPhone 17 */
+        .iphone17-section { background: #f5f5f7; }
+
+        .fan-placeholder {
+            width: 100%;
+            height: 400px;
+            background: linear-gradient(45deg, #1d1d1f 20%, #e8e5ff 25%, #d4f1f9 30%, #fffacd 35%, #1d1d1f 40%);
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Mapa */
+        #mapa-tiendas {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 2000;
+        }
+
+        #cerrar-mapa {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background-color: #1d1d1f;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 16px;
+            cursor: pointer;
+            font-size: 16px;
+            z-index: 3000;
+        }
+
+        /* Modal de Detalles del Producto */
+        #product-detail-modal {
+            display: none;
+            background: #fff;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            z-index: 1100;
+            overflow-y: scroll;
+        }
+
+        #close-product-modal-btn {
+            position: absolute; /* Cambiado de sticky a absolute para mejor compatibilidad */
+            top: 30px;
+            right: 30px;
+            background: rgba(0,0,0,0.1);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 1101;
+        }
+        
+        #product-detail-modal .modal-content-wrapper {
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px;
+        }
+        
+        /* ========================================= */
+        /* === ESTILOS DE LA LANDING (CrediMás) === */
+        /* ========================================= */
+        
+        .hero {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 10%;
+            background-color: #ffffff;
+            min-height: 90vh;
+        }
+        
+        .hero-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .text-section { flex: 1; max-width: 600px; }
+        .logo { width: 200px; margin-bottom: 20px; }
+        .logo img { max-width: 100%; height: auto; }
+        
+        .text-section h1 { font-size: 2.4rem; color: #0a1f44; margin-bottom: 15px; line-height: 1.3; font-weight: 700; }
+        .text-section p { font-size: 1.2rem; color: #333; margin-bottom: 30px; font-weight: 400; }
+
+        /* Contenedor de botones ajustado para centrar un único elemento */
+        .buttons { 
+            display: flex; 
+            justify-content: center; /* Centra el botón restante */
+            flex-wrap: wrap; 
+            gap: 15px; 
+        }
+
+        .btn-landing {
+            padding: 14px 22px;
+            border-radius: 10px;
+            font-weight: 600;
+            text-decoration: none;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            display: inline-block;
+        }
+
+        .btn-landing.tienda { background-color: #0a1f44; color: white; }
+        .btn-landing.vender { 
+            background-color: #ffffff; 
+            color: #0a1f44; 
+            border: 2px solid #0a1f44; 
+        }
+        
+        .btn-landing.vender:hover {
+            background-color: #dc3545;
+            color: white;
+            border: 2px solid #dc3545;
+        }
+
+        .image-section img {
+            width: 420px;
+            max-width: 100%;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Seccion Vender con CrediMás (visible) */
+        #how-it-works {
+            background-color: #f5f7fa;
+            padding: 80px 10%;
+            text-align: center;
+            display: none; 
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        #how-it-works.visible { display: block; opacity: 1; }
+        
+        #how-it-works .section-title { 
+            font-size: 2.2rem; 
+            color: #dc3545; /* Rojo de CrediMás */
+            margin-bottom: 10px; 
+            font-weight: 700; 
+        }
+        .section-subtitle { 
+            font-size: 1.3rem; 
+            color: #0a1f44; /* Azul Oscuro de CrediMás */
+            margin-bottom: 40px; 
+            font-weight: 400; 
+        }
+
+        .contact-btn {
+            background-color: #0a1f44; /* Azul Oscuro de CrediMás */
+            color: white; 
+            padding: 12px 25px; 
+            border-radius: 10px; 
+            font-weight: 600; 
+            text-decoration: none; 
+            margin-top: 50px; 
+            display: inline-block; 
+            transition: background-color 0.3s ease;
+        }
+        
+        .contact-btn:hover {
+            background-color: #dc3545; /* Rojo de CrediMás en hover */
+        }
+
+        .steps-container {
+            display: flex; justify-content: space-around; gap: 30px; flex-wrap: wrap; max-width: 1200px; margin: 0 auto;
+        }
+
+        .step-card {
+            background-color: #ffffff; border-radius: 10px; padding: 30px; flex: 1; min-width: 280px; max-width: 350px; text-align: left; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .step-card .icon {
+            width: 40px; height: 40px; background-color: #2d85d7; /* Iconos Azules */ border-radius: 50%; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.2rem; font-weight: bold;
+        }
+
+
+        footer {
+            background-color: #0a1f44;
+            color: white;
+            text-align: center;
+            padding: 15px;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 900px) {
+            .hero-content { flex-direction: column; text-align: center; min-height: auto; }
+            .image-section img { margin-top: 30px; width: 300px; }
+            .steps-container { flex-direction: column; align-items: center; }
+        }
+
+        /* ========================================= */
+        /* === ESTILOS DEL CHATBOT ZUKI === */
+        /* ========================================= */
+
+        /* Contenedor Flotante del Botón */
+        #chatbot-button {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background-color: #0a1f44;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            z-index: 1500;
+            transition: transform 0.3s ease;
+        }
+
+        #chatbot-button:hover {
+            transform: scale(1.05);
+        }
+
+        /* Ventana del Chat */
+        #chat-modal {
+            position: fixed;
+            bottom: 100px;
+            right: 30px;
+            width: 380px;
+            height: 500px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            display: none;
+            flex-direction: column;
+            z-index: 1500;
+            overflow: hidden;
+        }
+
+        /* Encabezado del Chat */
+        .chat-header {
+            background-color: #0a1f44;
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+        }
+
+        .chat-header .close-btn {
+            cursor: pointer;
+            font-size: 20px;
+        }
+
+        /* Cuerpo del Chat */
+        .chat-body {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background-color: #f7f7f7;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Estilo del Mensaje del Bot */
+        .bot-message {
+            background-color: #e6e6e6; 
+            padding: 10px 15px;
+            border-radius: 15px 15px 15px 0;
+            margin-bottom: 10px;
+            max-width: 80%;
+            align-self: flex-start;
+            line-height: 1.4;
+            font-size: 0.95rem;
+        }
+        
+        /* Estilo del Mensaje del Usuario */
+        .user-message {
+            background-color: #0a1f44;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 15px 15px 0 15px;
+            margin-bottom: 10px;
+            max-width: 80%;
+            align-self: flex-end;
+            line-height: 1.4;
+            font-size: 0.95rem;
+        }
+
+        /* Contenedor de Opciones */
+        .topic-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+            width: 100%;
+            align-self: flex-start; 
+        }
+
+        .topic-btn, .back-btn, .sub-btn {
+            background-color: white;
+            color: #0a1f44;
+            border: 1px solid #0a1f44;
+            padding: 10px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            text-align: left;
+            flex: 1 1 100%;
+            min-width: 100%;
+        }
+        
+        .topic-options .topic-btn:first-child,
+        .topic-options .topic-btn:nth-child(2),
+        .topic-options .sub-btn {
+             flex: 1 1 48%; 
+             min-width: 45%; 
+        }
+
+        .topic-options .sub-btn {
+            flex: 0 1 auto;
+            min-width: 100px;
+            text-align: center;
+        }
+
+        .topic-btn:hover, .back-btn:hover, .sub-btn:hover {
+            background-color: #0a1f44;
+            color: white;
+            border-color: #0a1f44;
+        }
+
+        /* Área de input */
+        .chat-input {
+            padding: 15px;
+            border-top: 1px solid #ddd;
+            display: flex;
+        }
+
+        .chat-input input {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 20px;
+            margin-right: 10px;
+        }
+
+        .chat-input button {
+            background-color: #dc3545; /* Rojo CrediMás */
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+        }
+
+        /* Ocultar el botón del chat en la tienda */
+        .tienda-body #chatbot-button {
+            display: none;
+        }
+        
+        /* ========================================= */
+        /* === ESTILOS DE LOS FORMULARIOS === */
+        /* ========================================= */
+        #partner-form, #quote-form {
+            display: none; /* Inicialmente oculto */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1200;
+            overflow-y: auto;
+            padding: 20px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        #partner-form.visible, #quote-form.visible {
+            display: block;
+            opacity: 1;
+        }
+
+        .form-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1201;
+        }
+
+        .form-container {
+            background-color: white;
+            max-width: 800px;
+            width: 90%;
+            margin: 40px auto;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+            position: relative;
+            z-index: 1202;
+        }
+        
+        /* Ajuste para el formulario de cotización más pequeño */
+        #quote-form .form-container {
+            max-width: 500px;
+            margin-top: 10vh;
+        }
+
+        .close-form-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #0a1f44;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .close-form-btn:hover {
+            color: #dc3545; /* Rojo CrediMás */
+        }
+
+        .form-title {
+            font-size: 2.5rem;
+            color: #0a1f44; /* Azul Oscuro CrediMás */
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        #quote-form .form-title {
+            font-size: 2rem;
+        }
+
+        .form-subtitle {
+            font-size: 1.1rem;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .partner-details, .quote-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .quote-details {
+            grid-template-columns: 1fr;
+        }
+        
+        .quote-details input:not([type="hidden"]),
+        .quote-details select {
+            grid-column: 1 / -1;
+        }
+        
+
+        .partner-details input,
+        .partner-details select,
+        .partner-details textarea,
+        .quote-details input,
+        .quote-details select,
+        .quote-details textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        .partner-details textarea,
+        .quote-details textarea {
+            grid-column: 1 / -1;
+            resize: vertical;
+        }
+        
+        .product-info-display {
+            grid-column: 1 / -1;
+            background-color: #f7f7f7;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #dc3545;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+
+        .submit-btn {
+            grid-column: 1 / -1;
+            background-color: #dc3545; /* Rojo CrediMás */
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .submit-btn:hover {
+            background-color: #0a1f44; /* Azul Oscuro CrediMás en hover */
+        }
+
+        /* ========================================= */
+        /* === AJUSTES RESPONSIVE (MEDIA QUERIES) === */
+        /* ========================================= */
+
+        @media (max-width: 700px) {
+            /* Ajuste Responsive del Formulario */
+            .partner-details {
+                grid-template-columns: 1fr; /* Columna única en móviles */
+            }
+            
+            .form-container {
+                padding: 20px;
+                margin: 20px auto;
+            }
+            
+            .form-title {
+                font-size: 2rem;
+            }
+        }
+
+        @media (max-width: 600px) {
+            /* Ajustes para Móviles */
+
+            /* 1. SECCIÓN HERO (Landing) */
+            .hero {
+                padding: 40px 5%;
+                min-height: auto;
+            }
+
+            .hero-content {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .text-section {
+                max-width: 100%;
+                margin-bottom: 20px;
+            }
+
+            .text-section h1 {
+                font-size: 1.8rem;
+            }
+            
+            .text-section p {
+                font-size: 1rem;
+            }
+
+            .image-section img {
+                width: 100%;
+                max-width: 300px; 
+                margin-top: 20px;
+            }
+
+            .buttons {
+                justify-content: center;
+            }
+            
+            .btn-landing {
+                width: 100%;
+                margin-bottom: 10px; 
+            }
+
+            /* 2. SECCIÓN HOW IT WORKS */
+            #how-it-works {
+                padding: 60px 5%;
+            }
+
+            .section-title {
+                font-size: 1.8rem;
+            }
+
+            .section-subtitle {
+                font-size: 1.1rem;
+            }
+
+            .steps-container {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .step-card {
+                min-width: 100%;
+                padding: 20px;
+            }
+
+            /* 3. CHATBOT (Asegura que el modal no se salga de la pantalla) */
+            #chat-modal {
+                width: 90%;
+                height: 80%;
+                right: 5%;
+                bottom: 70px;
+            }
+
+            /* 4. TIENDA (Nav principal) */
+            .nav-content {
+                height: auto;
+                flex-wrap: wrap; 
+                padding: 5px 10px;
+            }
+            
+            .apple-logo {
+                position: static;
+                order: 1;
+            }
+            
+            .nav-links {
+                display: none;
+                gap: 15px;
+                order: 3; 
+                width: 100%;
+                justify-content: space-between;
+                padding-top: 10px;
+            }
+            
+            .nav-links li {
+                margin: 0;
+            }
+
+            .product-section h1 {
+                font-size: 36px;
+            }
+
+            .product-section .subtitle {
+                font-size: 20px;
+            }
+            
+            .product-section .tagline {
+                font-size: 16px;
+            }
+
+            .product-images {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .phone-view {
+                width: 100px;
+                height: 350px;
+                transform: none !important;
+            }
+            
+            .fan-placeholder {
+                height: 300px;
+            }
+            
+            #product-detail-modal .modal-content-wrapper {
+                padding: 10px;
+            }
+            
+            #close-product-modal-btn {
+                top: 10px;
+                right: 10px;
+            }
+        }
+        
+    
+/* === NUEVO: Imagen con sombra y efecto de zoom === */
+.product-image {
+    width: 200px;
+    height: 280px;
+    margin: 0 auto 20px;
+    border-radius: 30px;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #f8f8f8;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.product-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 30px;
+    transition: transform 0.3s ease;
+}
+
+.product-image:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+}
+
+.product-image:hover img {
+    transform: scale(1.05);
+}
+
+</style>
+</head>
+<body id="main-body">
+    
+    <main id="credismas-landing">
+        <header class="hero">
+            <div class="hero-content">
+                <div class="text-section">
+                    <div class="logo">
+                        <img src="logo.png" alt="CrediMás Logo" style="width: 200px;">
+                    </div>
+                    <h1>CrediMás: El acceso Premium a tu tecnología.</h1>
+                    <p>¡Solicita tu crédito o vende con CrediMás hoy mismo!</p>
+
+                    <div class="buttons">
+                        <a href="#" class="btn-landing tienda" id="tienda-btn">Visita nuestra tienda en línea</a>
+                        
+                        <a href="#" class="btn-landing vender" id="vender-btn">Vende con CrediMás</a>
+                    </div>
+                </div>
+
+                <div class="image-section">
+                    
+<img src="persona.png" alt="Grupo de personas usando celulares" title="persona.png">
+                </div>
+            </div>
+        </header>
+
+        <section id="how-it-works">
+            <h2 class="section-title">¿Cómo funciona?</h2>
+            <p class="section-subtitle">Empieza a vender con CrediMas y ofrece más opciones a tus clientes. ¡Un celular a crédito!</p>
+
+            <div class="steps-container">
+                <div class="step-card">
+                    <div class="icon" style="background-color: #2d85d7;">&#8594;</div>
+                    <h3>Regístrate</h3>
+                    <p>Registra tus datos y recibe toda la información sobre cómo vender con CrediMas.</p>
+                </div>
+
+                <div class="step-card">
+                    <div class="icon" style="background-color: #2d85d7;">&#128241;</div>
+                    <h3>Vende más celulares</h3>
+                    <p>Ofrece a tus clientes la posibilidad de estrenar celular un nuevo IPHONE crédito con CrediMas.</p>
+                </div>
+
+                <div class="step-card">
+                    <div class="icon" style="background-color: #2d85d7;">&#36;</div>
+                    <h3>Aumenta tus ingresos</h3>
+                    <p>Al vender más e incrementar tu precio de venta, tus ingresos aumentarán.</p>
+                </div>
+            </div>
+
+            <a href="#" class="contact-btn">Contáctanos</a>
+        </section>
+
+        <section id="partner-form">
+            <div class="form-container">
+                <button id="close-partner-form-btn" class="close-form-btn">✖</button>
+                <h2 class="form-title">Asóciate con CrediMás</h2>
+                <p class="form-subtitle">Llena tus datos y nuestro equipo comercial se pondrá en contacto contigo.</p>
+                
+                <form class="partner-details" action="https://formsubmit.co/tucorreo@ejemplo.com" method="POST">
+                    
+                    <input type="hidden" name="_subject" value="Nueva Solicitud de Asociación de CrediMás">
+                    <input type="hidden" name="_next" value="URL_DE_AGRADECIMIENTO"> 
+
+                    <input type="text" name="nombre" placeholder="Nombre completo" required>
+                    <input type="tel" name="telefono" placeholder="+52 Teléfono" required>
+                    
+                    <input type="email" name="email" placeholder="Correo electrónico" required>
+                    <input type="tel" name="telefono_adicional" placeholder="+52 Teléfono Adicional">
+                    
+                    <select name="tipo_persona" required>
+                        <option value="">¿Eres una Persona Física o Moral?</option>
+                        <option value="fisica">Física</option>
+                        <option value="moral">Moral</option>
+                    </select>
+                    <input type="text" name="codigo_postal" placeholder="Código Postal" required>
+                    
+                    <select name="estado" required>
+                        <option value="">Estado</option>
+                        <option value="AGS">Aguascalientes</option>
+                        <option value="BC">Baja California</option>
+                        <option value="BCS">Baja California Sur</option>
+                        <option value="CAM">Campeche</option>
+                        <option value="CHIS">Chiapas</option>
+                        <option value="CHI">Chihuahua</option>
+                        <option value="CDMX">Ciudad de México</option>
+                        <option value="COAH">Coahuila</option>
+                        <option value="COL">Colima</option>
+                        <option value="DUR">Durango</option>
+                        <option value="GTO">Guanajuato</option>
+                        <option value="GRO">Guerrero</option>
+                        <option value="HGO">Hidalgo</option>
+                        <option value="JAL">Jalisco</option>
+                        <option value="MEX">México</option>
+                        <option value="MICH">Michoacán</option>
+                        <option value="MOR">Morelos</option>
+                        <option value="NAY">Nayarit</option>
+                        <option value="NL">Nuevo León</option>
+                        <option value="OAX">Oaxaca</option>
+                        <option value="PUE">Puebla</option>
+                        <option value="QRO">Querétaro</option>
+                        <option value="QR">Quintana Roo</option>
+                        <option value="SLP">San Luis Potosí</option>
+                        <option value="SIN">Sinaloa</option>
+                        <option value="SON">Sonora</option>
+                        <option value="TAB">Tabasco</option>
+                        <option value="TAM">Tamaulipas</option>
+                        <option value="TLAX">Tlaxcala</option>
+                        <option value="VER">Veracruz</option>
+                        <option value="YUC">Yucatán</option>
+                        <option value="ZAC">Zacatecas</option>
+                    </select>
+                    <select name="vende_celulares" required>
+                        <option value="">¿Ya venden celulares?</option>
+                        <option value="si">Sí</option>
+                        <option value="no">No</option>
+                    </select>
+                    
+                    <select name="tiendas_fisicas" required>
+                        <option value="">¿Cuentas con Tiendas Físicas?</option>
+                        <option value="si">Sí</option>
+                        <option value="no">No</option>
+                    </select>
+                    <input type="text" name="giro_principal" placeholder="Giro principal de tu negocio" required>
+
+                    
+                    <input type="text" name="tipo_empresa" placeholder="Tipo de empresa" required>
+                    <input type="text" name="como_se_entero" placeholder="¿Cómo te enteraste de nosotros?" required>
+
+
+                    <textarea name="mensaje" placeholder="Mensaje" rows="4"></textarea>
+
+                    <button type="submit" class="submit-btn">Enviar</button>
+                </form>
+            </div>
+            <div class="form-overlay" id="partner-form-overlay"></div>
+        </section>
+
+        <footer id="main-footer">
+            <p>2025 CrediMás. Más que un crédito.</p>
+        </footer>
+    </main>
+
+    
+    <div id="tienda-container">
+        
+        <div class="overlay" id="overlay"></div>
+
+        <nav>
+            <div class="nav-content">
+                <a href="#" class="apple-logo" id="close-tienda-btn">🏠</a> <ul class="nav-links">
+                    <li><a href="#" class="nav-item" data-menu="mapa">Tienda (Mapa)</a></li>
+                    <li><a href="#" class="nav-item" data-menu="samsung">Samsung</a></li>
+                    <li><a href="#" class="nav-item" data-menu="iphone">iPhone</a></li>
+                    <li><a href="#" class="nav-item" data-menu="motorola">Motorola</a></li>
+                </ul>
+
+                <div style="display: flex; align-items: center; gap: 10px; margin-left: auto;">
+                    <img src="logo.png" 
+                         alt="Logo CrediMás" 
+                         style="height: 40px; width: auto;">
+                    <span style="font-weight: 600; font-size: 18px;">
+                        <span style="color: #dc3545;">Credi</span><span style="color: #0071e3;">Más</span>
+                    </span>
+                </div>
+            </div>
+        </nav>
+        
+        <div class="dropdown-menu" id="menu-iphone">
+            <div class="dropdown-content">
+                <div class="product-grid">
+                    <div class="product-card orange">
+                        <div class="product-image"><img src="iphone14pro.png" alt="iPhone 15 Pro"></div>
+                        <div class="product-badge">New</div>
+                        <div class="product-name">iPhone 15 Pro</div>
+                        <div class="product-description">Diseño innovador para un rendimiento y una duración de batería óptimos.</div>
+                        <div class="product-price">Compra por tan solo $17,500 o credito a 26/13 pagos</div>
+                        <div class="product-links">
+                            <a href="#" class="product-link details-btn" data-model="iphone-15-pro">Conocer </a>
+                            </div>
+                    </div>
+                    <div class="product-card blue">
+                        <div class="product-image"><img src="iphone15.png" alt="iPhone 15"></div>
+                        <div class="product-badge">New</div>
+                        <div class="product-name">iPhone 15</div>
+                        <div class="product-description">El iPhone más elegante de la historia. Con la potencia de un Pro en su interior.</div>
+                        <div class="product-price">Compra por tan solo $13,500 o credito a 26/13 pagos</div>
+                        <div class="product-links">
+                            <a href="#" class="product-link details-btn" data-model="iphone-15">Conocer</a>
+                            </div>
+                    </div>
+                    <div class="product-card purple">
+                        <div class="product-image"><img src="iphone16.png" alt="iPhone 16"></div>
+                        <div class="product-badge">New</div>
+                        <div class="product-name">iPhone 16</div>
+                        <div class="product-description">Aún más encantador. Aún más duradero.</div>
+                        <div class="product-price">Compra por tan solo $16,900 o credito a 26/13 pagos</div>
+                        <div class="product-links">
+                            <a href="#" class="product-link details-btn" data-model="iphone-16">Conocer </a>
+                            </div>
+                    </div>
+                    <div class="product-card darkblue">
+                        <div class="product-image"><img src="iphone14.png" alt="iPhone 14"></div>
+                        <div class="product-name">iPhone 14</div>
+                        <div class="product-description">Rendimiento asombroso. Diseño duradero.</div>
+                        <div class="product-price">Compra por tan solo $12,900 o credito a 26/13 pagos</div>
+                        <div class="product-links">
+                            <a href="#" class="product-link details-btn" data-model="iphone-14">Conocer </a>
+                            </div>
+                    </div>
+                    <div class="product-card white">
+                        <div class="product-image"><img src="iphone16e.png" alt="iPhone 16e"></div>
+                        <div class="product-name">iPhone 16e</div>
+                        <div class="product-description">Todo lo que te encanta. Incluido el precio.</div>
+                        <div class="product-price">Compra por tan solo $12,999 o credito a 26/13 pagos</div>
+                        <div class="product-links">
+                            <a href="#" class="product-link details-btn" data-model="iphone-16e">Conocer </a>
+                            </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dropdown-menu" id="menu-samsung">
+            <div class="dropdown-content">
+                <div class="product-grid">
+                    <div class="product-card">
+                        <div class="product-image"><img src="note20.png" alt="Samsung Note 20 Ultra"></div>
+                        <div class="product-badge">New</div>
+                        <div class="product-name">Samsung Note 20 Ultra</div>
+                        <div class="product-description">La mejor cámara al mejor precio.</div>
+                        <div class="product-price">Compra por tan solo $7,500 o credito a 26/13 pagos.</div>
+                        <div class="product-links">
+                            <a href="#" class="product-link details-btn" data-model="samsung-note-20-ultra">conocer</a>
+                            </div>
+                    </div>
+                    <div class="product-card">
+                        <div class="product-image"><img src="samsungA35.png" alt="Samsung Galaxy A35"></div>
+                        <div class="product-name">Samsung Galaxy A35</div>
+                        <div class="product-description">Potencia y rendimiento excepcional.</div>
+                        <div class="product-price">Compra por tan solo $7,500 o credito a 26/13 pagos.</div>
+                        <div class="product-links">
+                            <a href="#" class="product-link details-btn" data-model="samsung-galaxy-a35">conocer</a>
+                            </div>
+                    </div>
+                    <div class="product-card">
+                        <div class="product-image"><img src="samsungâ4.png" alt="Samsung Galaxy A54"></div>
+                        <div class="product-name">Samsung Galaxy A54</div>
+                        <div class="product-description">Calidad premium accesible.</div>
+                        <div class="product-price">Compra por tan solo $7,500 o credito a 26/13 pagos.</div>
+                        <div class="product-links">
+                            <a href="#" class="product-link details-btn" data-model="samsung-galaxy-a54">Conocer </a>
+                            </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dropdown-menu" id="menu-motorola">
+            <div class="dropdown-content">
+                <div class="compare-link">
+                </div>
+                <div class="product-grid">
+                    <div class="product-card">
+                        <div class="product-image"><img src="motoedge40.png" alt="Motorola Edge 40 Pro"></div>
+                        <div class="product-badge">New</div>
+                        <div class="product-name">Motorola Edge 40 Pro</div>
+                        <div class="product-description">Rendimiento máximo y diseño premium.</div>
+                        <div class="product-price">Compra por tan solo $7,500 o credito a 26/13 pagos.</div>
+                        <div class="product-links">
+                            <a href="#" class="product-link details-btn" data-model="motorola-edge-40-pro">Conoce </a>
+                            </div>
+                    </div>
+                    <div class="product-card">
+                        <div class="product-image"><img src="motog34.png" alt="Moto G54"></div>
+                        <div class="product-name">Moto G54</div>
+                        <div class="product-description">El equilibrio perfecto.</div>
+                        <div class="product-price">Compra por tan solo $7,500 o credito a 26/13 pagos.</div>
+                        <div class="product-links">
+                            <a href="#" class="product-link details-btn" data-model="moto-g54">Conocer </a>
+                            </div>
+                    </div>
+                    <div class="product-card">
+                        <div class="product-image"><img src="motoE23.png" alt="Moto E23"></div>
+                        <div class="product-name">Moto E23</div>
+                        <div class="product-description">Todo lo esencial.</div>
+                        <div class="product-price">Compra por tan solo $7,500 o credito a 26/13 pagos.</div>
+                        <div class="product-links">
+                            <a href="#" class="product-link details-btn" data-model="moto-e23">Conocer </a>
+                            </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <section class="product-section">
+            <h1>iPhone Air</h1>
+            <p class="subtitle">El iPhone más delgado.</p>
+            <p class="tagline">El poder de un pro.</p>
+            
+            <div class="button-group">
+                <a href="#" class="btn-primary">Más información</a>
+                <a href="#" class="btn-secondary">Comprar</a>
+            </div>
+
+            <div class="product-images">
+                <div class="phone-view"></div>
+                <div class="phone-view"></div>
+                <div class="phone-view"></div>
+            </div>
+        </section>
+
+        <section class="product-section iphone17-section">
+            <h1>iPhone 17</h1>
+            <p class="subtitle">Maxima calidad.</p>
+            <p class="tagline">Maxima Eficacia.</p>
+            <div class="button-group">
+                <a href="#" class="btn-primary">Más información</a>
+                <a href="#" class="btn-secondary">Comprar</a>
+            </div>
+            
+            <div class="fan-placeholder">
+                <p style="color:white; font-size: 24px;">[Imagen Promocional del iPhone 17]</p>
+            </div>
+        </section>
+        
+        <div id="mapa-tiendas">
+            <button id="cerrar-mapa">Cerrar mapa ✖</button>
+        </div>
+
+        <div id="product-detail-modal">
+            <div class="modal-content-wrapper">
+                <button id="close-product-modal-btn">✖</button>
+                
+                <div id="product-details-content">
+                    </div>
+            </div>
+            </div>
+    </div>
+    
+    <section id="quote-form">
+        <div class="form-container">
+            <button id="close-quote-form-btn" class="close-form-btn">✖</button>
+            <h2 class="form-title">Solicita tu Cotización</h2>
+            <p class="form-subtitle">Déjanos tus datos y un asesor te enviará la cotización de tu nuevo equipo.</p>
+            
+            <div class="product-info-display" id="product-quote-display"></div>
+
+            <form class="quote-details" action="https://formsubmit.co/tucorreo@ejemplo.com" method="POST">
+                
+                <input type="hidden" name="_subject" id="quote-subject" value="Nueva Cotización de Equipo CrediMás">
+                <input type="hidden" name="Producto_Cotizado" id="product-input" value="">
+                <input type="hidden" name="_next" value="URL_DE_AGRADECIMIENTO_COTIZACION"> 
+
+                <input type="text" name="nombre" placeholder="Nombre completo" required>
+                <input type="email" name="email" placeholder="Correo electrónico" required>
+                <input type="tel" name="telefono" placeholder="+52 Teléfono" required>
+                
+                <textarea name="mensaje" placeholder="Comentarios adicionales (Opcional)" rows="3"></textarea>
+
+                <button type="submit" class="submit-btn">Enviar Cotización</button>
+            </form>
+        </div>
+        <div class="form-overlay" id="quote-form-overlay"></div>
+    </section>
+
+    
+    <div id="chatbot-button">
+        💬
+    </div>
+
+    <div id="chat-modal">
+        <div class="chat-header">
+            <span>Zuki - Asistente Virtual</span>
+            <span class="close-btn" id="close-chat-btn">✖</span>
+        </div>
+
+        <div class="chat-body" id="chat-messages">
+            </div>
+
+        <div class="chat-input">
+            <input type="text" placeholder="Escribe un mensaje..." disabled>
+            <button disabled>➤</button>
+        </div>
+    </div>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <script>
+        // =========================================
+        // === LÓGICA DE INTERACCIÓN (JS) UNIFICADA ===
+        // =========================================
+
+        // --- Elementos de la Landing Page ---
+        const mainBody = document.getElementById('main-body');
+        const landingPage = document.getElementById('credismas-landing');
+        const tiendaContainer = document.getElementById('tienda-container');
+        const tiendaBtn = document.getElementById('tienda-btn'); 
+        const venderBtn = document.getElementById('vender-btn'); 
+        const howItWorksSection = document.getElementById('how-it-works');
+        const closeTiendaBtn = document.getElementById('close-tienda-btn'); 
+        
+        // --- Elementos del Chatbot ---
+        const chatbotButton = document.getElementById('chatbot-button');
+        const chatModal = document.getElementById('chat-modal');
+        const closeChatBtn = document.getElementById('close-chat-btn');
+        const chatMessages = document.getElementById('chat-messages');
+        const mapaDiv = document.getElementById('mapa-tiendas');
+
+        // --- Elementos del Formulario de Asociación ---
+        const partnerForm = document.getElementById('partner-form');
+        const contactBtn = document.querySelector('#how-it-works .contact-btn');
+        const closePartnerFormBtn = document.getElementById('close-partner-form-btn');
+        const partnerFormOverlay = document.getElementById('partner-form-overlay');
+        
+        // --- Elementos del Formulario de Cotización Rápida ---
+        const quoteForm = document.getElementById('quote-form');
+        const closeQuoteFormBtn = document.getElementById('close-quote-form-btn');
+        const quoteFormOverlay = document.getElementById('quote-form-overlay');
+        // NOTA: Los botones .cotizar-btn ahora solo son relevantes si se habilita un botón "Cotizar" en el detalle del producto.
+        const cotizarButtons = document.querySelectorAll('.cotizar-btn'); 
+        const productQuoteDisplay = document.getElementById('product-quote-display');
+        const productInput = document.getElementById('product-input');
+        const quoteSubject = document.getElementById('quote-subject');
+        
+        // --- NUEVOS Elementos de Detalle de Producto ---
+        const detailsButtons = document.querySelectorAll('.details-btn');
+        const productDetailModal = document.getElementById('product-detail-modal');
+        const closeProductModalBtn = document.getElementById('close-product-modal-btn');
+        const productDetailsContent = document.getElementById('product-details-content');
+
+
+        // --- Definición de Respuestas y Menu Inicial (CHATBOT) ---
+        const initialMenuHTML = `
+            ¡Hola! 😊 Soy **Zuki**, tu asistente virtual de CrediMás.
+            <p>Te puedo ayudar con los siguientes temas:</p>
+            
+            <div class="topic-options">
+                <button class="topic-btn" data-topic="1">¿Como puedo realizar mis pagos?</button>
+                <button class="topic-btn" data-topic="2">¿Hablar con asesor?</button>
+                <button class="topic-btn" data-topic="3">¿Numero de atención a clientes?</button>
+                <button class="topic-btn" data-topic="4">¿Deseo realizar una cotización personalizada?</button>
+                <button class="topic-btn" data-topic="5">¿Mi equipo no desbloquea?</button>
+            </div>
+        `;
+
+        const responses = {
+            '1': {
+                question: '¿Como puedo realizar mis pagos?',
+                answer: `Hola, buenas tardes. Te habla Zuky. Usted cuenta con la opción de realizar sus pagos mediante Oxxo, con tarjeta directamente en nuestra aplicación o directamente en tienda.`,
+            },
+            '2': {
+                question: '¿Hablar con asesor?',
+                answer: `Hola, buenas tardes. Te habla Zuky. Le comparto el numero de atención a clientes, aceptamos tanto llamadas como WhatsApp **+52 624 111 11 11**, ¿Puede ayudarte con otra solicitud?`,
+            },
+            '3': {
+                question: '¿Numero de atención a clientes?',
+                answer: `Hola, buenas tardes. Te habla Zuky. Le comparto el numero de atención a clientes, aceptamos tanto llamadas como WhatsApp **+52 624 111 11 11** estamos disponibles de 9:00am a 8:30pm.`,
+            },
+            '4': {
+                question: '¿Deseo realizar una cotización personalizada?',
+                answer: `Hola, buenas tardes. Te habla Zuky. Le comparto el numero de nuestro asesor de ventas especializado **Jose Rojas +52 624 777 77 77**.`,
+            },
+            '5': {
+                question: '¿Mi equipo no desbloquea?',
+                answer: `Hola, buenas tardes. Te habla Zuky. Para realizar un desbloqueo exitoso prueba reiniciar tu equipo, colocar una recarga mayor a **$50.00** o conectarlo a wifi. En caso de que realizando todos estos pasos no desbloquea, puedes contactarte con el numero de atención a clientes.`,
+            }
+        };
+
+        // --- BASE DE DATOS DE DETALLES DE PRODUCTO ---
+        const productDetails = {
+            'iphone-15-pro': {
+                title: 'iPhone 15 Pro - El poder del Titanio.',
+                subtitle: 'Desde $28,999 de contado o 18 MSI desde $1,611.00',
+                features: [
+                    'Chip A17 Bionic Pro, el más rápido en un smartphone.',
+                    'Sistema de cámara Pro con teleobjetivo 5x.',
+                    'Diseño de titanio, ligero y resistente.',
+                    'Puerto USB-C con soporte USB 3 (hasta 10 Gbps).'
+                ],
+                image: 'iphone-15-pro.png', 
+                footer: 'Consulta términos y condiciones del crédito.',
+                cotizar: 'iPhone 15 Pro'
+            },
+            'iphone-15': {
+                title: 'iPhone 15 - El salto al futuro.',
+                subtitle: 'Desde $19,999 de contado o 18 MSI desde $1,111.00',
+                features: [
+                    'Dynamic Island, la nueva forma de interactuar.',
+                    'Cámara principal de 48 MP.',
+                    'Chip A16 Bionic.',
+                    'USB-C.'
+                ],
+                image: 'iphone-15.png',
+                footer: 'Consulta términos y condiciones del crédito.',
+                cotizar: 'iPhone 15'
+            },
+            'samsung-note-20-ultra': {
+                title: 'Samsung Note 20 Ultra - La mejor cámara al mejor precio.',
+                subtitle: 'Desde $7,500 de contado o crédito a 26/13 pagos.',
+                features: [
+                    'Pantalla Dynamic AMOLED 2X de 120Hz.',
+                    'S Pen de latencia ultrabaja.',
+                    'Zoom espacial de 50X.',
+                    'Batería inteligente de 4500mAh.'
+                ],
+                image: 'samsung-n20u.png',
+                footer: 'Consulta términos y condiciones del crédito.',
+                cotizar: 'Samsung Note 20 Ultra'
+            },
+            'samsung-galaxy-a35': {
+                title: 'Samsung Galaxy A35 - Potencia a tu alcance.',
+                subtitle: 'Desde $5,500 de contado o crédito a 26/13 pagos.',
+                features: [
+                    'Diseño moderno y minimalista.',
+                    'Cámara triple de alta resolución.',
+                    'Batería de larga duración.'
+                ],
+                image: 'samsung-a35.png',
+                footer: 'Consulta términos y condiciones del crédito.',
+                cotizar: 'Samsung Galaxy A35'
+            },
+            'motorola-edge-40-pro': {
+                title: 'Motorola Edge 40 Pro - Rendimiento sin límites.',
+                subtitle: 'Desde $10,500 de contado o crédito a 26/13 pagos.',
+                features: [
+                    'Procesador Snapdragon más rápido.',
+                    'Carga ultrarrápida TurboPower.',
+                    'Diseño curvo y ergonómico.'
+                ],
+                image: 'moto-e40p.png',
+                footer: 'Consulta términos y condiciones del crédito.',
+                cotizar: 'Motorola Edge 40 Pro'
+            },
+            'iphone-16': {
+                title: 'iPhone 16 - Rendimiento mejorado.',
+                subtitle: 'Desde $16,900 de contado o crédito a 26/13 pagos.',
+                features: [
+                    'Chip A17 Bionic.',
+                    'Nueva cámara gran angular.',
+                    'Mejoras en duración de batería.',
+                    'Pantalla Super Retina XDR.'
+                ],
+                image: 'iphone-16.png',
+                footer: 'Consulta términos y condiciones del crédito.',
+                cotizar: 'iPhone 16'
+            },
+            'iphone-14': {
+                title: 'iPhone 14 - Un clásico potente.',
+                subtitle: 'Desde $12,900 de contado o crédito a 26/13 pagos.',
+                features: [
+                    'Chip A15 Bionic.',
+                    'Modo Cine y Modo Acción.',
+                    'Detección de choques.',
+                    'Cámara principal de 12 MP.'
+                ],
+                image: 'iphone-14.png',
+                footer: 'Consulta términos y condiciones del crédito.',
+                cotizar: 'iPhone 14'
+            },
+            'iphone-16e': {
+                title: 'iPhone 16e - El precio que te encantará.',
+                subtitle: 'Desde $12,999 de contado o crédito a 26/13 pagos.',
+                features: [
+                    'Potencia asequible.',
+                    'Cámara mejorada.',
+                    'Ideal para uso diario.'
+                ],
+                image: 'iphone-16e.png',
+                footer: 'Consulta términos y condiciones del crédito.',
+                cotizar: 'iPhone 16e'
+            },
+            'samsung-galaxy-a54': {
+                title: 'Samsung Galaxy A54 - Calidad premium accesible.',
+                subtitle: 'Desde $7,500 de contado o crédito a 26/13 pagos.',
+                features: [
+                    'Pantalla Super AMOLED.',
+                    'Resistencia al agua y al polvo IP67.',
+                    'Cámara con Nightography.'
+                ],
+                image: 'samsung-a54.png',
+                footer: 'Consulta términos y condiciones del crédito.',
+                cotizar: 'Samsung Galaxy A54'
+            },
+            'moto-g54': {
+                title: 'Moto G54 - El equilibrio perfecto.',
+                subtitle: 'Desde $7,500 de contado o crédito a 26/13 pagos.',
+                features: [
+                    'Batería gigante.',
+                    'Pantalla Full HD+ de 120Hz.',
+                    'Cámara de 50MP con OIS.'
+                ],
+                image: 'moto-g54.png',
+                footer: 'Consulta términos y condiciones del crédito.',
+                cotizar: 'Moto G54'
+            },
+            'moto-e23': {
+                title: 'Moto E23 - Todo lo esencial.',
+                subtitle: 'Desde $7,500 de contado o crédito a 26/13 pagos.',
+                features: [
+                    'Precio inmejorable.',
+                    'Batería para todo el día.',
+                    'Diseño compacto y duradero.'
+                ],
+                image: 'moto-e23.png',
+                footer: 'Consulta términos y condiciones del crédito.',
+                cotizar: 'Moto E23'
+            }
+        };
+
+
+        // --- Funciones del Chatbot (Sin Cambios) ---
+        function addMessage(sender, content) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add(sender === 'bot' ? 'bot-message' : 'user-message');
+            messageDiv.innerHTML = content;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function showInitialMenu() {
+            chatMessages.innerHTML = '';
+            addMessage('bot', initialMenuHTML);
+            addTopicButtonListeners();
+        }
+
+        function addTopicButtonListeners() {
+            const topicButtons = chatMessages.querySelectorAll('.topic-btn');
+            topicButtons.forEach(button => {
+                button.addEventListener('click', handleTopicClick);
+            });
+        }
+        
+        function handleTopicClick(event) {
+            const button = event.target;
+            const topicId = button.dataset.topic;
+            const topicData = responses[topicId];
+            
+            addMessage('user', topicData.question);
+
+            if (topicId === '1') {
+                addMessage('bot', topicData.answer);
+                showMapOptionSubMenu(); 
+                
+            } else {
+                addMessage('bot', topicData.answer);
+                showBackToMenuButton();
+            }
+        }
+        
+        function showBackToMenuButton() {
+            const backButtonHTML = `
+                <div class="topic-options">
+                    <button class="back-btn">Volver al menú principal</button>
+                </div>
+            `;
+            addMessage('bot', backButtonHTML);
+            chatMessages.querySelector('.back-btn:last-child').addEventListener('click', showInitialMenu);
+        }
+
+        function showMapOptionSubMenu() {
+            const mapOptionsHTML = `
+                ¿Desea conocer sus tiendas cercanas?
+                <div class="topic-options">
+                    <button class="sub-btn" data-action="map-yes">Sí</button>
+                    <button class="sub-btn" data-action="map-no">No</button>
+                </div>
+            `;
+            
+            addMessage('bot', mapOptionsHTML);
+
+            const subButtons = chatMessages.querySelectorAll('.sub-btn');
+            subButtons.forEach(button => {
+                if (button.closest('.bot-message:last-child')) {
+                     button.addEventListener('click', handleSubMenuClick);
+                }
+            });
+        }
+
+        function handleSubMenuClick(event) {
+            const action = event.target.dataset.action;
+            
+            addMessage('user', event.target.textContent);
+
+            const optionsDiv = event.target.closest('.topic-options');
+            if (optionsDiv) {
+                optionsDiv.remove();
+            }
+            
+            if (action === 'map-yes') {
+                addMessage('bot', '¡Entendido! Te llevaré a nuestra tienda en línea para que consultes el mapa de ubicaciones. Una vez que lo cierres, podrás volver al chat.');
+                
+                chatModal.style.display = 'none'; 
+                
+                openTienda(); 
+                obtenerUbicacionActualYMostrarMapa(); 
+                
+            } else { 
+                addMessage('bot', 'Entendido. ¿Puedo ayudarte con otra cosa?');
+                showBackToMenuButton();
+            }
+        }
+        // --- FIN Funciones del Chatbot ---
+
+
+        // --- Lógica de Abrir/Cerrar la Tienda Completa ---
+        function openTienda() {
+            landingPage.style.display = 'none';
+            tiendaContainer.style.display = 'block';
+            mainBody.classList.add('tienda-body');
+            chatModal.style.display = 'none'; 
+            chatbotButton.style.display = 'none'; 
+            
+            // CORRECCIÓN CLAVE 1 (TIENDA): Aseguramos que el overlay y los menús de la tienda estén cerrados
+            closeAllDropdowns(); 
+            
+            window.scrollTo(0, 0); 
+        }
+
+        function closeTienda() {
+            tiendaContainer.style.display = 'none';
+            landingPage.style.display = 'block';
+            mainBody.classList.remove('tienda-body');
+            closeAllDropdowns();
+            document.getElementById('mapa-tiendas').style.display = 'none';
+            document.body.style.overflow = 'auto'; 
+            chatbotButton.style.display = 'flex'; 
+        }
+        
+        // --- Lógica de Cotización Rápida ---
+        function openQuoteForm(product) {
+            closeAllDropdowns();
+            closeProductDetails(); // Asegurarse de cerrar el modal de detalles
+            
+            productQuoteDisplay.textContent = `Equipo Seleccionado: ${product}`;
+            productInput.value = product;
+            quoteSubject.value = `Solicitud de Cotización para: ${product}`;
+
+            quoteForm.classList.add('visible');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeQuoteForm() {
+            quoteForm.classList.remove('visible');
+            document.body.style.overflow = 'auto';
+        }
+
+        // --- Funciones de Detalle del Producto ---
+
+        function generateProductHTML(modelKey) {
+            const data = productDetails[modelKey];
+            if (!data) return '<h2>Producto no encontrado.</h2>';
+
+            const featuresList = data.features.map(f => `<li>${f}</li>`).join('');
+
+            return `
+                <div style="padding-top: 50px; padding-bottom: 50px;">
+                    <h1 style="font-size: 40px; font-weight: 700; color: #1d1d1f; margin-bottom: 5px;">${data.title}</h1>
+                    <p style="font-size: 22px; color: #86868b; margin-bottom: 40px;">${data.subtitle}</p>
+                    
+                    <div style="display: flex; gap: 40px; flex-wrap: wrap;">
+                        
+                        <div style="flex: 1; min-width: 300px; background-color: #f0f0f5; border-radius: 15px; display: flex; align-items: center; justify-content: center; height: 500px;">
+                            <p style="font-size: 18px; color: #666;">[Imagen: ${data.image}]</p>
+                        </div>
+
+                        <div style="flex: 1; min-width: 300px;">
+                            <h3 style="font-size: 24px; color: #1d1d1f; margin-bottom: 20px;">Características Principales</h3>
+                            <ul style="list-style: none; padding-left: 0; margin-bottom: 40px;">
+                                ${featuresList}
+                            </ul>
+                            
+                            <h3 style="font-size: 24px; color: #1d1d1f; margin-bottom: 20px;">Opciones de Compra</h3>
+                            <p style="font-size: 16px; color: #333; margin-bottom: 15px;">
+                                ${data.subtitle}
+                            </p>
+
+                            <button id="detail-cotizar-btn" data-product="${data.cotizar}" 
+                                style="background-color: #0071e3; color: white; padding: 12px 25px; border: none; border-radius: 20px; font-size: 16px; cursor: pointer;">
+                                Cotizar ${data.cotizar}
+                            </button>
+                            
+                            <p style="font-size: 14px; color: #86868b; margin-top: 30px;">
+                                *${data.footer}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function openProductDetails(modelKey) {
+            closeAllDropdowns();
+            
+            productDetailsContent.innerHTML = generateProductHTML(modelKey);
+            
+            productDetailModal.style.display = 'block';
+            document.body.style.overflow = 'hidden'; 
+            window.scrollTo(0, 0); 
+            
+            const cotizarInModalBtn = document.getElementById('detail-cotizar-btn');
+            cotizarInModalBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                closeProductDetails(); 
+                openQuoteForm(e.target.dataset.product);
+            });
+        }
+
+        function closeProductDetails() {
+            productDetailModal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+
+        // --- Event Listeners Globales ---
+        
+        tiendaBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            // Esta función llama a openTienda() que ahora tiene la corrección.
+            openTienda(); 
+        });
+
+        closeTiendaBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            closeTienda();
+        });
+
+        detailsButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                const modelKey = button.dataset.model;
+                openProductDetails(modelKey);
+            });
+        });
+
+        closeProductModalBtn.addEventListener('click', closeProductDetails);
+
+
+        // --- Lógica de Vender y Formulario de Asociación ---
+        venderBtn.addEventListener('click', function(event) {
+            event.preventDefault(); 
+            const isVisible = howItWorksSection.classList.contains('visible');
+
+            if (isVisible) {
+                howItWorksSection.classList.remove('visible');
+                setTimeout(() => {
+                    howItWorksSection.style.display = 'none';
+                    if (contactBtn && !partnerForm.classList.contains('visible')) {
+                         contactBtn.style.display = 'inline-block';
+                    }
+                }, 500); 
+            } else {
+                howItWorksSection.style.display = 'block';
+                setTimeout(() => {
+                    howItWorksSection.classList.add('visible');
+                    howItWorksSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    if (contactBtn && !partnerForm.classList.contains('visible')) {
+                         contactBtn.style.display = 'inline-block';
+                    }
+                }, 50);
+            }
+        });
+
+        contactBtn.addEventListener('click', openPartnerForm);
+        closePartnerFormBtn.addEventListener('click', closePartnerForm);
+        partnerFormOverlay.addEventListener('click', closePartnerForm);
+
+        function openPartnerForm(event) {
+            event.preventDefault();
+            partnerForm.classList.add('visible');
+            document.body.style.overflow = 'hidden';
+            
+            if (contactBtn) {
+                contactBtn.style.display = 'none';
+            }
+        }
+
+        function closePartnerForm() {
+            partnerForm.classList.remove('visible');
+            document.body.style.overflow = 'auto';
+
+            if (contactBtn && howItWorksSection.classList.contains('visible')) {
+                contactBtn.style.display = 'inline-block';
+            }
+        }
+
+        // --- Event Listeners para la Cotización Rápida ---
+        // Se mantiene el listener aquí, pero ya no hay botones .cotizar-btn en la tienda
+        cotizarButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                const product = button.dataset.product;
+                openQuoteForm(product);
+            });
+        });
+
+        closeQuoteFormBtn.addEventListener('click', closeQuoteForm);
+        quoteFormOverlay.addEventListener('click', closeQuoteForm);
+
+
+        // --- Lógica del Chatbot Zuki ---
+        
+        chatbotButton.addEventListener('click', () => {
+            if (!mainBody.classList.contains('tienda-body')) {
+                chatModal.style.display = 'flex';
+                chatbotButton.style.display = 'none';
+                showInitialMenu();
+            }
+        });
+
+        closeChatBtn.addEventListener('click', () => {
+            chatModal.style.display = 'none';
+            if (!mainBody.classList.contains('tienda-body')) {
+                 chatbotButton.style.display = 'flex';
+            }
+        });
+
+
+        // =========================================
+        // === LÓGICA DE NAVEGACIÓN Y MAPA (TIENDA) ===
+        // =========================================
+        
+        const navItems = document.querySelectorAll('.nav-links a');
+        const overlay = document.getElementById('overlay');
+        let currentMenu = null;
+
+        function closeAllDropdowns() {
+            const abiertos = document.querySelectorAll('.dropdown-menu.active');
+            abiertos.forEach(m => m.classList.remove('active'));
+            overlay.classList.remove('active');
+            currentMenu = null;
+        }
+
+        function openDropdown(menu) {
+            currentMenu = menu;
+            menu.classList.add('active');
+            overlay.classList.add('active');
+        }
+
+        // --- Lógica del Mapa (Leaflet) y Tiendas ---
+        const cerrarMapaBtn = document.getElementById('cerrar-mapa');
+        let mapaInstancia = null;
+
+        const tiendas = [
+            { nombre: "CrediMás Cabo San Lucas, Plaza Patios", coords: [22.905212338159284, -109.93338555828315] },
+            { nombre: "CrediMás Cabo San Lucas 2", coords: [22.896203041680064, -109.92509495451591] },
+            { nombre: "CrediMás Cabo San Lucas 3", coords: [22.895911822563182, -109.91715873607086] },
+            { nombre: "CrediMás Cabo San Lucas 4", coords: [22.920702203480275, -109.92550810992755] },
+            { nombre: "CrediMás Cabo San Lucas 5", coords: [22.93408742600548, -109.92923451516216] },
+            { nombre: "CrediMás San José del Cabo", coords: [23.0617, -109.6977] },
+            { nombre: "CrediMás La Paz", coords: [24.1426, -110.3128] }
+        ];
+
+        function distanciaHaversine(c1, c2) {
+            const R = 6371; // km
+            const dLat = (c2[0] - c1[0]) * Math.PI / 180;
+            const dLon = (c2[1] - c1[1]) * Math.PI / 180;
+            const lat1 = c1[0] * Math.PI / 180;
+            const lat2 = c2[0] * Math.PI / 180;
+
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(lat1) * Math.cos(lat2) *
+                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c; // Distancia en km
+        }
+
+        function obtenerUbicacionActualYMostrarMapa() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const ubicacionActual = [position.coords.latitude, position.coords.longitude];
+                        mostrarMapa(ubicacionActual);
+                    },
+                    (error) => {
+                        console.error("Error al obtener la ubicación: ", error);
+                        mostrarMapa([23.6345, -102.5528]);
+                    },
+                    { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+                );
+            } else {
+                mostrarMapa([23.6345, -102.5528]);
+            }
+        }
+
+        function mostrarMapa(centerCoords) {
+            closeAllDropdowns();
+            mapaDiv.style.display = 'block';
+            document.body.style.overflow = 'hidden'; 
+
+            setTimeout(() => {
+                if (mapaInstancia) {
+                    mapaInstancia.remove(); 
+                }
+
+                mapaInstancia = L.map('mapa-tiendas').setView(centerCoords, 9); 
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                }).addTo(mapaInstancia);
+
+                if (centerCoords.length === 2 && !isNaN(centerCoords[0]) && !isNaN(centerCoords[1])) {
+                    L.marker(centerCoords, {
+                        icon: L.divIcon({
+                            className: 'custom-div-icon',
+                            html: '<div style="background-color:blue; width:20px; height:20px; border-radius:50%; border: 3px solid white;"></div>',
+                            iconSize: [20, 20],
+                            iconAnchor: [10, 10]
+                        })
+                    })
+                    .addTo(mapaInstancia)
+                    .bindPopup("Tu ubicación actual")
+                    .openPopup();
+
+                    tiendas.forEach(tienda => {
+                        const distancia = distanciaHaversine(centerCoords, tienda.coords);
+                        let popupText = `${tienda.nombre}<br>Distancia: ${distancia.toFixed(2)} km`;
+                        
+                        L.marker(tienda.coords)
+                            .addTo(mapaInstancia)
+                            .bindPopup(popupText)
+                            .openPopup();
+                    });
+                } else {
+                    tiendas.forEach(tienda => {
+                        L.marker(tienda.coords)
+                            .addTo(mapaInstancia)
+                            .bindPopup(tienda.nombre)
+                            .openPopup();
+                    });
+                }
+            }, 100); 
+        }
+
+        cerrarMapaBtn.addEventListener('click', () => {
+            mapaDiv.style.display = 'none';
+            document.body.style.overflow = 'auto'; 
+            if (mapaInstancia) {
+                mapaInstancia.remove(); 
+                mapaInstancia = null;
+            }
+            closeTienda();
+            
+            if (!chatModal.style.display || chatModal.style.display === 'none') {
+                chatModal.style.display = 'flex';
+                chatbotButton.style.display = 'none'; 
+                showBackToMenuButton();
+            }
+        });
+
+
+        // --- Event Listeners para la navegación de la Tienda ---
+        navItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                const menuId = e.target.dataset.menu;
+                
+                closeAllDropdowns(); 
+
+                if (menuId === 'mapa') {
+                    obtenerUbicacionActualYMostrarMapa();
+                } else if (menuId) {
+                    const targetMenu = document.getElementById(`menu-${menuId}`);
+                    if (targetMenu && targetMenu !== currentMenu) {
+                        openDropdown(targetMenu);
+                    } else {
+                        closeAllDropdowns();
+                    }
+                }
+            });
+        });
+        
+
+        overlay.addEventListener('click', closeAllDropdowns);
+        
+        document.addEventListener('DOMContentLoaded', showInitialMenu);
+    </script>
+</body>
+</html>
