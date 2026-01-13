@@ -968,6 +968,78 @@
     transform: scale(1.05);
 }
 
+
+        /* ========================================= */
+        /* === NUEVO: AVISO TIPO "AGUA" EN LA TIENDA === */
+        /* ========================================= */
+        #tienda-aviso-overlay{
+            display:none;
+            pointer-events: none;
+            position: fixed;
+            inset: 0;
+            z-index: 5000; /* encima de todo (mapa 2000, chat 1500, etc.) */
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        #tienda-aviso-overlay .tienda-aviso-card{
+            width: min(720px, 92vw);
+            border-radius: 18px;
+            padding: 28px 24px;
+            background: rgba(255,255,255,0.20);
+            border: 1px solid rgba(255,255,255,0.35);
+            box-shadow: 0 18px 50px rgba(0,0,0,0.22);
+            text-align: center;
+        }
+
+        #tienda-aviso-overlay .tienda-aviso-title{
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #0a1f44;
+            margin-bottom: 10px;
+            text-transform: none;
+        }
+
+        #tienda-aviso-overlay .tienda-aviso-sub{
+            font-size: 1.02rem;
+            color: rgba(10,31,68,0.92);
+            margin-bottom: 18px;
+            line-height: 1.5;
+        }
+
+        #tienda-aviso-overlay .tienda-aviso-watermark{
+            margin: 14px auto 18px;
+            width: 100%;
+            height: 10px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, rgba(220,53,69,0.20), rgba(0,113,227,0.18), rgba(10,31,68,0.18));
+            filter: blur(0.2px);
+        }
+
+        #tienda-aviso-overlay .tienda-aviso-btn{
+            background-color: #0a1f44;
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            padding: 12px 22px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.15s ease, opacity 0.2s ease;
+        }
+        #tienda-aviso-overlay .tienda-aviso-btn:hover{
+            transform: translateY(-1px);
+            opacity: 0.95;
+        }
+
+        /* Evitar seleccionar texto por accidente dentro del overlay */
+        #tienda-aviso-overlay *{
+            user-select: none;
+        }
+
 </style>
 </head>
 <body id="main-body">
@@ -1115,6 +1187,18 @@
 
     
     <div id="tienda-container">
+        <!-- ========================================= -->
+        <!-- === NUEVO: AVISO TRANSPARENTE (TIPO AGUA) === -->
+        <!-- ========================================= -->
+        <div id="tienda-aviso-overlay" aria-hidden="true">
+            <div class="tienda-aviso-card">
+                <div class="tienda-aviso-title">CrediMás está trabajando en darte la mejor experiencia en línea</div>
+                <div class="tienda-aviso-watermark"></div>
+                <div class="tienda-aviso-sub">Gracias por tu paciencia. Muy pronto tendrás una experiencia de compra aún mejor.</div>
+                <button id="tienda-aviso-volver" class="tienda-aviso-btn" type="button">Volver</button>
+            </div>
+        </div>
+
         
         <div class="overlay" id="overlay"></div>
 
@@ -1401,6 +1485,29 @@
         const productDetailsContent = document.getElementById('product-details-content');
 
 
+        // --- NUEVO: Aviso transparente al entrar a la tienda ---
+        const tiendaAvisoOverlay = document.getElementById('tienda-aviso-overlay');
+        const tiendaAvisoVolverBtn = document.getElementById('tienda-aviso-volver');
+
+        function showTiendaAviso() {
+            if (!tiendaAvisoOverlay) return;
+            tiendaAvisoOverlay.style.display = 'flex';
+            tiendaAvisoOverlay.style.pointerEvents = 'auto';
+            tiendaAvisoOverlay.setAttribute('aria-hidden', 'false');
+            // Bloquea interacción del fondo mientras se muestra el aviso
+            document.body.style.overflow = 'hidden';
+        }
+
+        function hideTiendaAviso() {
+            if (!tiendaAvisoOverlay) return;
+            tiendaAvisoOverlay.style.display = 'none';
+            tiendaAvisoOverlay.style.pointerEvents = 'none';
+            tiendaAvisoOverlay.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = 'auto';
+        }
+
+
+
         // --- Definición de Respuestas y Menu Inicial (CHATBOT) ---
         const initialMenuHTML = `
             ¡Hola! 😊 Soy **Zuki**, tu asistente virtual de CrediMás.
@@ -1408,7 +1515,6 @@
             
             <div class="topic-options">
                 <button class="topic-btn" data-topic="1">¿Como puedo realizar mis pagos?</button>
-                <button class="topic-btn" data-topic="2">¿Hablar con asesor?</button>
                 <button class="topic-btn" data-topic="3">¿Numero de atención a clientes?</button>
                 <button class="topic-btn" data-topic="4">¿Deseo realizar una cotización personalizada?</button>
                 <button class="topic-btn" data-topic="5">¿Mi equipo no desbloquea?</button>
@@ -1418,23 +1524,20 @@
         const responses = {
             '1': {
                 question: '¿Como puedo realizar mis pagos?',
-                answer: `Hola, buenas tardes. Te habla Zuky. Usted cuenta con la opción de realizar sus pagos mediante Oxxo, con tarjeta directamente en nuestra aplicación o directamente en tienda.`,
+                answer: `Hola, te habla Zuki. Cuentas con las siguientes opción de realizar sus pagos mediante Oxxo, con tarjeta directamente en nuestra aplicación o directamente en tienda.`,
             },
-            '2': {
-                question: '¿Hablar con asesor?',
-                answer: `Hola, buenas tardes. Te habla Zuky. Le comparto el numero de atención a clientes, aceptamos tanto llamadas como WhatsApp **+52 624 111 11 11**, ¿Puede ayudarte con otra solicitud?`,
-            },
+            
             '3': {
                 question: '¿Numero de atención a clientes?',
-                answer: `Hola, buenas tardes. Te habla Zuky. Le comparto el numero de atención a clientes, aceptamos tanto llamadas como WhatsApp **+52 624 111 11 11** estamos disponibles de 9:00am a 8:30pm.`,
+                answer: `Hola, te habla Zuki. Le comparto el numero de atención a clientes, aceptamos tanto llamadas como WhatsApp +52 624 289 04 64 estamos disponibles de 9:00am a 8:30pm.`,
             },
             '4': {
                 question: '¿Deseo realizar una cotización personalizada?',
-                answer: `Hola, buenas tardes. Te habla Zuky. Le comparto el numero de nuestro asesor de ventas especializado **Jose Rojas +52 624 777 77 77**.`,
+                answer: `Hola, te habla Zuki. Le comparto el numero de nuestro asesor de ventas especializado **Jose Rojas +52 625 350 07 77.`,
             },
             '5': {
                 question: '¿Mi equipo no desbloquea?',
-                answer: `Hola, buenas tardes. Te habla Zuky. Para realizar un desbloqueo exitoso prueba reiniciar tu equipo, colocar una recarga mayor a **$50.00** o conectarlo a wifi. En caso de que realizando todos estos pasos no desbloquea, puedes contactarte con el numero de atención a clientes.`,
+                answer: `Hola, te habla Zuki. Para realizar un desbloqueo exitoso prueba reiniciar tu equipo, colocar una recarga mayor a **$50.00** o conectarlo a wifi. En caso de que realizando todos estos pasos no desbloquea, puedes contactarte con el numero de atención a clientes.`,
             }
         };
 
@@ -1663,7 +1766,8 @@
                 
                 chatModal.style.display = 'none'; 
                 
-                openTienda(); 
+                openTienda({ skipAviso: true });
+                hideTiendaAviso();
                 obtenerUbicacionActualYMostrarMapa(); 
                 
             } else { 
@@ -1675,7 +1779,8 @@
 
 
         // --- Lógica de Abrir/Cerrar la Tienda Completa ---
-        function openTienda() {
+        function openTienda(options = {}) {
+            const { skipAviso = false } = options;
             landingPage.style.display = 'none';
             tiendaContainer.style.display = 'block';
             mainBody.classList.add('tienda-body');
@@ -1686,9 +1791,11 @@
             closeAllDropdowns(); 
             
             window.scrollTo(0, 0); 
+            if (!skipAviso) { showTiendaAviso(); }
         }
 
         function closeTienda() {
+            hideTiendaAviso();
             tiendaContainer.style.display = 'none';
             landingPage.style.display = 'block';
             mainBody.classList.remove('tienda-body');
@@ -1795,6 +1902,27 @@
             e.preventDefault();
             closeTienda();
         });
+
+
+        // --- NUEVO: Botón "Volver" del aviso de tienda ---
+        if (tiendaAvisoVolverBtn) {
+            tiendaAvisoVolverBtn.addEventListener('click', () => {
+                // Cierra el aviso y regresa a la landing principal
+                hideTiendaAviso();
+                closeTienda();
+            });
+        }
+
+        // Opcional: si el usuario presiona ESC, también regresa a la landing
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && tiendaAvisoOverlay && tiendaAvisoOverlay.style.display === 'flex') {
+                hideTiendaAviso();
+                closeTienda();
+            }
+        });
+
+            // closeTienda();
+            // });
 
         detailsButtons.forEach(button => {
             button.addEventListener('click', (e) => {
@@ -2046,5 +2174,40 @@
         
         document.addEventListener('DOMContentLoaded', showInitialMenu);
     </script>
+
+<a id="btn-whatsapp" href="https://wa.me/526242890464" target="_blank" 
+   style="position: fixed; bottom: 110px; right: 30px; 
+          background:#25D366; color:white; padding:14px 20px; 
+          border-radius: 50px; font-size:16px; text-decoration:none;
+          font-weight:600; box-shadow:0 5px 15px rgba(0,0,0,0.3);
+          z-index:1600;">
+    WhatsApp
+</a>
+
+
+<style>
+#whatsapp-float {
+  position: fixed;
+  bottom: 100px; /* encima del chatbot */
+  right: 20px;
+  width: 56px;
+  height: 56px;
+  background-color: #25D366;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  z-index: 9999;
+}
+#whatsapp-float img {
+  width: 32px;
+  height: 32px;
+}
+#whatsapp-float:hover {
+  transform: scale(1.05);
+}
+</style>
+
 </body>
 </html>
